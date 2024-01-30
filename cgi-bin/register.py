@@ -33,7 +33,7 @@ print(f'''
                 <button type="button" onclick="register()">Registrujte se</button>
             </form>
             <div class="form-feedback">Vec imate nalog? <a href="login.py" id="goToLogin">Idite na prijavu.</a></div>
-            <div id="badPassword" class="form-feedback-error">Sifre se ne poklapaju</div>  
+            <div id="formError" class="form-feedback-error"></div>  
         </div>
       
         <script src="../js/script.js"></script>
