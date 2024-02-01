@@ -19,3 +19,8 @@ if "login" in get:
     print("Content-type: application/json\n")
     content = database.login_user(get["account"].value)
     print(json.dumps(content))
+
+if "get-all-games" in get:
+    print("Content-type: application/json\n")
+    content = database.get_all_games()
+    print(json.dumps(content))

@@ -67,7 +67,7 @@ class Database():
         self.connection.commit()
 
         row_count = cursor.rowcount
-        
+
         cursor.close()
 
         if row_count > 0:
@@ -102,3 +102,33 @@ class Database():
             content["login"] = "True"
 
         return content
+
+    def get_all_games(self):
+        content = dict() 
+
+        sql = "SELECT * FROM games"
+
+        cursor = self.connection.cursor()
+        cursor.execute(sql)
+
+        self.connection.commit()
+
+        for row in cursor.fetchall():
+            id = row[0]
+            name = row[1]
+            image = row[2]
+            price = row[3]
+            rating = row[4]
+
+            game = dict()
+            game["name"] = name
+            game["image"] = image
+            game["price"] = price
+            game["rating"] = rating
+
+            content[id] = game
+
+        cursor.close()
+
+        return content
+

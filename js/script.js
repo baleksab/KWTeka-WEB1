@@ -179,3 +179,68 @@ function checkIfLoggedIn() {
     if (getCookie("session_id"))
         window.location = "home.py"
 }
+
+function loadAllGames() {
+    var xmlHttp = new XMLHttpRequest()
+
+    xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var content = JSON.parse(this.responseText)
+
+            var catalog = document.querySelector("#game-catalog")
+            catalog.innerHTML = ""
+
+            for (const id in content) {
+                const game = content[id]
+
+                var ratingColor = "red";
+                var displayButton = "none";
+
+                if (parseFloat(game["rating"]) > 2.5 && parseFloat(game["rating"]) < 4.0)
+                    ratingColor = "orange";
+                else if (parseFloat(game["rating"]) >= 4.0)
+                    ratingColor = "green";
+                else 
+                    ratingColor = "red";
+
+                if (getCookie("session_id"))
+                    displayButton = "inline-block"
+
+                catalog.innerHTML += `
+                    <div class="game">
+                        <h2>${game["name"]}</h2>
+                        <img src="${game["image"]}" alt="${game["name"]}">
+                        <p class="info">Ocena: <span style="color: ${ratingColor}">${game["rating"]}</span></p>
+                        <p class="info">Cena: ${game["price"]}<span style="color: green;">$</span></p>
+                        <button style="display: ${displayButton};" onclick="addToCart(${id})">Dodaj u korpu</button>
+                    </div>
+                `
+            }
+        }
+    }
+
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?get-all-games=True`)
+    xmlHttp.send()
+}
+
+function loadNavbarButtons() {
+    var logout = document.querySelector("#logoutButton")
+    var register = document.querySelector("#registerButton")
+    var login = document.querySelector("#loginButton")
+    var profile = document.querySelector("#profileButton")
+    var cart = document.querySelector("#cartButton")
+
+    if (getCookie("session_id")) {
+        login.style.display = "none";
+        register.style.display = "none";
+    } else {
+        logout.style.display = "none";
+        profile.style.display = "none";
+        cart.style.display = "none";
+    }
+}
+
+function populateHome() {
+    loadNavbarButtons()
+    loadAllGames()
+}
