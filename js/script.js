@@ -62,13 +62,15 @@ function register() {
 
                     account = JSON.parse(account)
 
-                    document.cookie = `session_id=${content["session_id"]};expires=${utcDate}`
+                    document.cookie = `session_id=${content["session_id"]};expires=${utcDate};`
                     document.cookie = `email=${account["email"]};expires=${utcDate}`
-                    document.cookie = `first_name=${account["first_name"]};expires=${utcDate}`
-                    document.cookie = `last_name=${account["last_name"]};expires=${utcDate}`
-                    document.cookie = `budget=${account["last_name"]};expires=${utcDate}`
+                    document.cookie = `first_name=${account["first_name"]};expires=${utcDate};`
+                    document.cookie = `last_name=${account["last_name"]};expires=${utcDate};`
+                    document.cookie = `budget=${account["last_name"]};expires=${utcDate};`
 
                     window.location = "home.py"
+
+                    console.log("Registered")
                 } else 
                     formError.textContent = "*Korisnik sa datim emailom vec postoji"
             }
@@ -81,23 +83,84 @@ function register() {
 }
 
 function logout() {
-    document.cookie = `email=${account["email"]};expires=${utcDate}`
-    document.cookie = `first_name=${account["first_name"]};expires=${utcDate}`
-    document.cookie = `last_name=${account["last_name"]};expires=${utcDate}`
-    document.cookie = `budget=${account["last_name"]};expires=${utcDate}`
+    document.cookie = "email=;expires=Thu, 01 Jan 1970 00:00:00 UTC;"
+    document.cookie = "first_name=;expires=Thu, 01 Jan 1970 00:00:00 UTC;"
+    document.cookie = "last_name=;expires=Thu, 01 Jan 1970 00:00:00 UTC;"
+    document.cookie = "budget=;expires=Thu, 01 Jan 1970 00:00:00 UTC;"
 
     var xmlHttp = new XMLHttpRequest()
 
     xmlHttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC;"
+            var content = JSON.parse(this.responseText)
+
+            if (content["logout"] == "True") {
+                document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC;"
+                console.log("Logged out")
+            }
+
             window.location = 'login.py'
         }
     }
     
     xmlHttp.open("GET", `../cgi-bin/utils/requests.py?logout=True&session_id=${getCookie("session_id")}`, true)
     xmlHttp.send()
+
 }
+
+function login() {
+    var email = document.querySelector("#email").value
+    var password = document.querySelector("#password").value
+    
+    var formError = document.querySelector("#formError")
+
+    var errorMsg = ""
+
+    if (email.length == 0 || password.length == 0)
+        errorMsg = "*Sva polja moraju biti popunjena"
+
+    if (errorMsg == "") {
+        var account = {}
+        account["email"] = email
+        account["password"] = password
+        
+        account = JSON.stringify(account)
+
+        var xmlHttp = new XMLHttpRequest()
+
+        xmlHttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var content = JSON.parse(this.responseText)
+
+                if (content["login"] == "True") {
+                    var date = new Date()
+                    date.setTime(date.getTime() + 86400000)
+
+                    var utcDate = date.toUTCString()
+                    var cookie = document.cookie.split(";")
+
+                    for (var i = 0; i < cookie.length; i++)
+                        document.cookie = cookie[i] + "=;expires=" + new Date(0).toUTCString()
+
+                    document.cookie = `session_id=${content["session_id"]};expires=${utcDate};`
+                    document.cookie = `email=${content["email"]};expires=${utcDate}`
+                    document.cookie = `first_name=${content["first_name"]};expires=${utcDate};`
+                    document.cookie = `last_name=${content["last_name"]};expires=${utcDate};`
+                    document.cookie = `budget=${content["last_name"]};expires=${utcDate};`
+
+                    window.location = "home.py"
+
+                    console.log("Logged in")
+                } else 
+                    formError.textContent = "*Korisnik sa datim podacima ne postoji"
+            }
+        }
+
+        xmlHttp.open("GET", `../cgi-bin/utils/requests.py?login=True&account=${account}`)
+        xmlHttp.send()
+    } else 
+        formError.textContent = errorMsg
+}    
 
 function getCookie(name) {
     const cookies = document.cookie.split(';')
@@ -110,4 +173,9 @@ function getCookie(name) {
     }
 
     return null;
+}
+
+function checkIfLoggedIn() {
+    if (getCookie("session_id"))
+        window.location = "home.py"
 }

@@ -12,7 +12,7 @@ print(f'''
         <link rel="stylesheet" href="../css/style.css">
         <title>KWTeka</title>
     </head>
-    <body>
+    <body onload="checkIfLoggedIn()">
         <div class="form-container">
             <form id="register-form">
                 <label for="email">E-mail adresa:</label>
@@ -21,10 +21,13 @@ print(f'''
                 <label for="password">Sifra:</label>
                 <input type="password" id="password" name="password" required>
 
-                <button type="submit">Prijavite se</button>
+                <button type="button" onclick="login()">Prijavite se</button>
             </form>
             <div class="form-feedback">Nemate nalog? <a href="register.py" id="goToLogin">Idite na registraciju.</a></div>
+            <div id="formError" class="form-feedback-error"></div>  
         </div>
+      
+        <script src="../js/script.js"></script>
     </body>
     </html> 
 ''')

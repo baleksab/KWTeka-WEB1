@@ -20,6 +20,7 @@ class Database():
             content["email"] = row[0]
             content["first_name"] = row[1]
             content["last_name"] = row[2]
+            content["password"] = row[3]
             content["budget"] = row[4]
 
             cursor.close()
@@ -54,16 +55,50 @@ class Database():
 
         return content
     
-    def logout_client(self, session_id):
+    def logout_user(self, session_id):
+        content = dict()
+        content["logout"] = "False"
+        
         sql = f"UPDATE users SET session_id = '' WHERE session_id='{session_id}'"
 
         cursor = self.connection.cursor()
         cursor.execute(sql)
 
         self.connection.commit()
+
+        row_count = cursor.rowcount
         
-        content = cursor.fetchone()
         cursor.close()
 
-        if content:
-            return True
+        if row_count > 0:
+            content["logout"] = "True"
+
+        return content
+        
+    def login_user(self, account):
+        account = json.loads(account)
+        password = hashlib.sha256(account["password"].encode("utf-8")).hexdigest()
+
+        content = dict()
+        content["login"] = "False"
+
+        user = self.get_user_by_mail(account["email"])
+
+        if (user != False and user["password"] == password):
+            session_id = random.randint(10**13, 10**14 - 1) 
+
+            sql = f"UPDATE users SET session_id = '{session_id}' WHERE email = '{account["email"]}'"
+                
+            cursor = self.connection.cursor()
+            cursor.execute(sql)
+
+            self.connection.commit()
+
+            content["session_id"] = session_id
+            content["first_name"] = user["first_name"]
+            content["last_name"] = user["last_name"]
+            content["email"] = user["email"]
+            content["budget"] = user["budget"]
+            content["login"] = "True"
+
+        return content

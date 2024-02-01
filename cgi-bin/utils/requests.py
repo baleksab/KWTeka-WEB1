@@ -12,5 +12,10 @@ if "register" in get:
 
 if "logout" in get:
     print("Content-type: application/json\n")
-    content = database.logout_client(get["session_id"].value)
+    content = database.logout_user(get["session_id"].value)
+    print(json.dumps(content))
+
+if "login" in get:
+    print("Content-type: application/json\n")
+    content = database.login_user(get["account"].value)
     print(json.dumps(content))

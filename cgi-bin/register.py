@@ -12,7 +12,7 @@ print(f'''
         <link rel="stylesheet" href="../css/style.css">
         <title>KWTeka</title>
     </head>
-    <body>
+    <body onload="checkIfLoggedIn()">
         <div class="form-container">
             <form id="register-form">
                 <label for="email">E-mail adresa:</label>
