@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 from os import environ
 from http.cookies import SimpleCookie 

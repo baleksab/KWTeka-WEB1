@@ -34,3 +34,13 @@ if "remove-from-cart" in get:
     print("Content-type: application/json\n")
     content = database.remove_from_cart(get["email"].value, get["game-id"].value)
     print(json.dumps(content))
+
+if "get-all-cart-games" in get:
+    print("Content-type: application/json\n")
+    content = database.get_all_cart_games(get["email"].value)
+    print(json.dumps(content))
+
+if "buy-cart-games" in get:
+    print("Content-type: application/json\n")
+    content = database.buy_cart_games(get["email"].value)
+    print(json.dumps(content))

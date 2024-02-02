@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 from os import environ
 from http.cookies import SimpleCookie 
@@ -24,6 +24,9 @@ print(f'''
 
                     <label for="lastName">Prezime:</label>
                     <input type="text" id="lastName" name="lastName" required>
+      
+                    <label for="budget">Budzet:</label>
+                    <input type="number" min="0" id="budget" name="budget" required>
 
                     <label for="password">Sifra:</label>
                     <input type="password" id="password" name="password" required>

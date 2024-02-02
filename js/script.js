@@ -20,6 +20,7 @@ function register() {
     var email = document.querySelector("#email").value
     var firstName = document.querySelector("#firstName").value
     var lastName = document.querySelector("#lastName").value
+    var budget = document.querySelector("#budget").value
     var password = document.querySelector("#password").value
     var confirmPassword = document.querySelector("#confirmPassword").value
 
@@ -40,7 +41,7 @@ function register() {
         account["first_name"] = firstName
         account["last_name"] = lastName
         account["password"] = password
-        account["budget"] = 0
+        account["budget"] = budget
 
         account = JSON.stringify(account)
 
@@ -66,7 +67,7 @@ function register() {
                     document.cookie = `email=${account["email"]};expires=${utcDate}`
                     document.cookie = `first_name=${account["first_name"]};expires=${utcDate};`
                     document.cookie = `last_name=${account["last_name"]};expires=${utcDate};`
-                    document.cookie = `budget=${account["last_name"]};expires=${utcDate};`
+                    document.cookie = `budget=${account["budget"]};expires=${utcDate};`
 
                     window.location = "home.py"
 
@@ -146,7 +147,7 @@ function login() {
                     document.cookie = `email=${content["email"]};expires=${utcDate}`
                     document.cookie = `first_name=${content["first_name"]};expires=${utcDate};`
                     document.cookie = `last_name=${content["last_name"]};expires=${utcDate};`
-                    document.cookie = `budget=${content["last_name"]};expires=${utcDate};`
+                    document.cookie = `budget=${content["budget"]};expires=${utcDate};`
 
                     window.location = "home.py"
 
@@ -309,5 +310,125 @@ function removeFromCart(id) {
     }
     
     xmlHttp.open("GET", `../cgi-bin/utils/requests.py?remove-from-cart=True&email=${getCookie("email")}&game-id=${id}`, true)
+    xmlHttp.send()
+}
+
+function populateCart() {
+    if (getCookie("session_id") == null)
+        window.location = "home.py"
+    
+    loadNavbarButtons()
+    loadCartGames()
+}
+
+function loadCartGames() {
+    var usersStatus = document.querySelector("#users-status-id")
+    var budgetLabel = document.querySelector("#budget")
+    var cartLabel = document.querySelector("#cart-cost")
+    var newBudgetLabel = document.querySelector("#new-budget")
+
+    var xmlHttp = new XMLHttpRequest()
+
+    xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var content = JSON.parse(this.responseText)
+            console.log(content)
+            var catalog = document.querySelector("#game-catalog")
+            catalog.innerHTML = ""
+            var sum = 0;
+
+            for (const id in content) {
+                const game = content[id]
+
+                var ratingColor = "red";
+
+                if (parseFloat(game["rating"]) > 2.5 && parseFloat(game["rating"]) < 4.0)
+                    ratingColor = "orange";
+                else if (parseFloat(game["rating"]) >= 4.0)
+                    ratingColor = "green";
+                else 
+                    ratingColor = "red";
+
+                var buttonText = "Ukloni iz korpe"
+                var buttonColor = "red"
+                var buttonFunction = `removeFromCart2(${id})`
+
+                catalog.innerHTML += `
+                    <div class="game">
+                        <h2>${game["name"]}</h2>
+                        <img src="${game["image"]}" alt="${game["name"]}">
+                        <p class="info">Ocena: <span style="color: ${ratingColor}">${game["rating"]}</span></p>
+                        <p class="info">Cena: ${game["price"]}<span style="color: green;">$</span></p>
+                        <button id="buy-button${id}" style="background-color: ${buttonColor};" onclick="${buttonFunction}">${buttonText}</button>
+                    </div>
+                `
+
+                sum += parseFloat(game["price"])
+            }
+
+            if (Object.keys(content).length == 0) {
+                catalog.innerHTML = "<h1>KORPA JE PRAZNA</h1>"
+                usersStatus.style["display"] = "none"
+            } else {
+                budgetLabel.money = parseFloat(getCookie("budget")).toFixed(2)
+                cartLabel.money = sum.toFixed(2) 
+                newBudgetLabel.money = (budgetLabel.money - sum).toFixed(2)
+                
+                budgetLabel.textContent = budgetLabel.money
+                cartLabel.textContent = cartLabel.money
+                newBudgetLabel.textContent = newBudgetLabel.money
+            }
+        }
+    }
+
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?get-all-cart-games=True&email=${getCookie("email")}`)
+    xmlHttp.send()
+}
+
+function removeFromCart2(id) {
+    var button = document.querySelector(`#buy-button${id}`)
+    button.disabled = true 
+
+    var xmlHttp = new XMLHttpRequest()
+
+    xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var content = JSON.parse(this.responseText)
+
+            if (content["removed"] == "True") {
+                loadCartGames()
+            }
+        }
+    }
+    
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?remove-from-cart=True&email=${getCookie("email")}&game-id=${id}`, true)
+    xmlHttp.send()
+}
+
+function buyCartItems() {
+    var buyButton = document.querySelector("#buyButton")
+    buyButton.disabled = true
+
+    var xmlHttp = new XMLHttpRequest()
+
+    xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var content = JSON.parse(this.responseText)
+            
+            if (content["success"] = "True") {
+                var date = new Date()
+                date.setTime(date.getTime() + 86400000)
+                document.cookie = `budget=${content["budget"]};expires=${date.toUTCString()};`
+
+                loadCartGames()
+                alert("Uspesno obavljena kupovina!")
+            } else 
+                alert("Nemate dovoljno novca!")
+
+            buyButton.disabled = false
+        }
+    }
+
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?buy-cart-games=True&email=${getCookie("email")}`)
     xmlHttp.send()
 }

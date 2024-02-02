@@ -223,3 +223,61 @@ class Database():
         content["added"] = "True"
 
         return content
+    
+    def get_all_cart_games(self, email):
+        content = dict()
+
+        sql = f"SELECT * FROM users_carts WHERE email = '{email}'"
+
+        cursor = self.connection.cursor()
+        cursor.execute(sql)
+
+        self.connection.commit()
+
+        for row in cursor.fetchall():
+            id = row[1]
+            content[id] = self.get_game_by_id(id)
+
+        cursor.close()
+
+        return content
+    
+    def buy_cart_games(self, email):
+        content = dict()
+        content["success"] = "False"
+
+        games = self.get_all_cart_games(email)
+        user = self.get_user_by_mail(email)
+
+        sum = 0
+
+        for id in games:
+            sum += float(games[id]["price"])
+        
+        if user != False and float(user["budget"]) >= sum:
+            sql = f"UPDATE users SET budget = budget - '{sum}' WHERE email = '{email}'"
+
+            cursor = self.connection.cursor()
+            cursor.execute(sql)
+
+            self.connection.commit()
+
+            cursor.close()
+
+            for id in games:
+                sql = f"INSERT INTO users_inventories(email, game_id) VALUES ('{email}', '{id}')"
+
+                cursor = self.connection.cursor()
+                cursor.execute(sql)
+
+                self.connection.commit()
+
+                cursor.close()
+
+                self.remove_from_cart(email, id)
+
+            content["success"] = "True"
+            content["budget"] = float(user["budget"]) - sum
+
+        return content
+
