@@ -213,10 +213,16 @@ function loadAllGames() {
                 if (getCookie("session_id")) {
                     displayButton = "inline-block"
 
-                    if (getCookie("email") && game["users_carts"].includes(getCookie("email"))) {
-                        buttonText = "Ukloni iz korpe"
-                        buttonColor = "red"
-                        buttonFunction = `removeFromCart(${id})`
+                    if (getCookie("email")) {
+                        if (game["users_carts"].includes(getCookie("email"))) {
+                            buttonText = "Ukloni iz korpe"
+                            buttonColor = "red"
+                            buttonFunction = `removeFromCart(${id})`
+                        } else if (game["users_inventories"].includes(getCookie("email"))) {
+                            buttonText = "Vec imate ovu igricu"
+                            buttonColor = "orange"
+                            buttonFunction = ``
+                        }
                     }
                 }
 
@@ -415,14 +421,14 @@ function buyCartItems() {
         if (this.readyState == 4 && this.status == 200) {
             var content = JSON.parse(this.responseText)
             
-            if (content["success"] = "True") {
+            if (content["success"] == "True") {
                 var date = new Date()
                 date.setTime(date.getTime() + 86400000)
                 document.cookie = `budget=${content["budget"]};expires=${date.toUTCString()};`
 
                 loadCartGames()
                 alert("Uspesno obavljena kupovina!")
-            } else 
+            } else
                 alert("Nemate dovoljno novca!")
 
             buyButton.disabled = false
@@ -430,5 +436,98 @@ function buyCartItems() {
     }
 
     xmlHttp.open("GET", `../cgi-bin/utils/requests.py?buy-cart-games=True&email=${getCookie("email")}`)
+    xmlHttp.send()
+}
+
+function populateProfile() {
+    if (getCookie("session_id") == null)
+        window.location = "home.py"
+
+    loadNavbarButtons()
+    loadInventoryGames()
+}
+
+function loadInventoryGames() {
+    var firstNameLabel = document.querySelector("#first-name")
+    var lastNameLabel = document.querySelector("#last-name")
+    var budgetLabel = document.querySelector("#budget")
+
+    firstNameLabel.textContent = getCookie("first_name")
+    lastNameLabel.textContent = getCookie("last_name")
+    budgetLabel.textContent = parseFloat(getCookie("budget")).toFixed(2)
+
+    var xmlHttp = new XMLHttpRequest()
+
+    xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var content = JSON.parse(this.responseText)
+        
+            var catalog = document.querySelector("#game-catalog")
+            catalog.innerHTML = ""
+            
+            for (const id in content) {
+                const game = content[id]
+
+                var ratingColor = "red";
+                var price = (parseFloat(game["price"]) * 0.6).toFixed(2)
+
+                if (parseFloat(game["rating"]) > 2.5 && parseFloat(game["rating"]) < 4.0)
+                    ratingColor = "orange";
+                else if (parseFloat(game["rating"]) >= 4.0)
+                    ratingColor = "green";
+                else 
+                    ratingColor = "red";
+
+                var buttonText = "Prodaj igricu"
+                var buttonColor = "#3498db"
+                var buttonFunction = `sellGameFromInventory(${id})`
+
+                catalog.innerHTML += `
+                    <div class="game">
+                        <h2>${game["name"]}</h2>
+                        <img src="${game["image"]}" alt="${game["name"]}">
+                        <p class="info">Ocena: <span style="color: ${ratingColor}">${game["rating"]}</span></p>
+                        <p class="info">Cena: ${game["price"]}<span style="color: green;">$</span></p>
+                        <p class="info">Otkupna cena: ${price}<span style="color: green;">$</span></p>
+                        <button id="buy-button${id}" style="background-color: ${buttonColor};" onclick="${buttonFunction}">${buttonText}</button>
+                    </div>
+                `
+            }
+
+            if (Object.keys(content).length == 0) {
+                catalog.innerHTML = "<h1>NEMATE NI JEDNU IGRICU KUPLJENU</h1>"
+            } 
+        }
+    }
+
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?get-all-inventory-games=True&email=${getCookie("email")}`)
+    xmlHttp.send()
+}
+
+function sellGameFromInventory(id) {
+    var buyButton = document.querySelector(`#buy-button${id}`)
+    buyButton.disabled = true
+
+    var xmlHttp = new XMLHttpRequest()
+
+    xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var content = JSON.parse(this.responseText)
+            
+            if (content["success"] == "True") {
+                var date = new Date()
+                date.setTime(date.getTime() + 86400000)
+                document.cookie = `budget=${content["budget"]};expires=${date.toUTCString()};`
+
+                loadInventoryGames()
+                alert("Uspesno ste prodali igricu!")
+            }  else
+                console.log("Desila se neka greska")
+
+            buyButton.disabled = false
+        }
+    }
+
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?sell-inventory-game=True&email=${getCookie("email")}&game-id=${id}`)
     xmlHttp.send()
 }

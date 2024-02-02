@@ -127,6 +127,7 @@ class Database():
             game["rating"] = rating
             game["game_id"] = id
             game["users_carts"] = list()
+            game["users_inventories"] = list()
 
             sql = f"SELECT email FROM users_carts WHERE game_id = '{id}'"
 
@@ -137,6 +138,18 @@ class Database():
 
             for row2 in cursor2.fetchall():
                 game["users_carts"].append(row2[0])
+
+            cursor2.close()
+
+            sql = f"SELECT email FROM users_inventories WHERE game_id = '{id}'"
+
+            cursor2 = self.connection.cursor()
+            cursor2.execute(sql)
+
+            self.connection.commit()
+
+            for row2 in cursor2.fetchall():
+                game["users_inventories"].append(row2[0])
 
             cursor2.close()
 
@@ -248,14 +261,20 @@ class Database():
 
         games = self.get_all_cart_games(email)
         user = self.get_user_by_mail(email)
+        library = self.get_all_inventory_games(email)
 
-        sum = 0
+        sum_value = 0
+        fail = False
 
-        for id in games:
-            sum += float(games[id]["price"])
+        for game_id in games:
+            sum_value += float(games[game_id]["price"])
+
+            if game_id in library:
+                fail = True
+                break 
         
-        if user != False and float(user["budget"]) >= sum:
-            sql = f"UPDATE users SET budget = budget - '{sum}' WHERE email = '{email}'"
+        if fail == False and user != False and float(user["budget"]) >= sum_value:
+            sql = f"UPDATE users SET budget = budget - '{sum_value}' WHERE email = '{email}'"
 
             cursor = self.connection.cursor()
             cursor.execute(sql)
@@ -277,7 +296,57 @@ class Database():
                 self.remove_from_cart(email, id)
 
             content["success"] = "True"
-            content["budget"] = float(user["budget"]) - sum
+            content["budget"] = float(user["budget"]) - sum_value
 
         return content
 
+    def get_all_inventory_games(self, email):
+        content = dict()
+
+        sql = f"SELECT * FROM users_inventories WHERE email = '{email}'"
+
+        cursor = self.connection.cursor()
+        cursor.execute(sql)
+
+        self.connection.commit()
+
+        for row in cursor.fetchall():
+            id = row[1]
+            content[id] = self.get_game_by_id(id)
+
+        cursor.close()
+
+        return content
+    
+    def sell_game_from_inventory(self, email, game_id):
+        content = dict()
+        content["success"] = "False"
+
+        user = self.get_user_by_mail(email)
+        game = self.get_game_by_id(game_id)
+
+        if (user != False and game != False):
+            price = game["price"] * 0.6
+
+            sql = f"UPDATE users SET budget = budget + '{price}' WHERE email = '{email}'"
+
+            cursor = self.connection.cursor()
+            cursor.execute(sql)
+
+            self.connection.commit()
+
+            cursor.close()
+
+            sql = f"DELETE from users_inventories WHERE email = '{email}' and game_id = '{game_id}'"
+
+            cursor = self.connection.cursor()
+            cursor.execute(sql)
+
+            self.connection.commit()
+
+            cursor.close()
+
+            content["success"] = "True"
+            content["budget"] = user["budget"] + price 
+
+        return content

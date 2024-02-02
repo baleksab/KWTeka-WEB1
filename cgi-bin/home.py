@@ -18,7 +18,7 @@ print(f'''
             <nav>
                 <div class="logo"><a href="home.py">WEBTeka</a></div>
                 <ul>
-                    <li id="profileButton"><a href="#">Profil</a></li>
+                    <li id="profileButton"><a href="profile.py">Profil</a></li>
                     <li id="cartButton"><a href="cart.py">Korpa</a></li>
                     <li id="logoutButton"><a href="logout.py">Odjava</a></li>
                     <li id="loginButton"><a href="login.py">Prijava</a></li>

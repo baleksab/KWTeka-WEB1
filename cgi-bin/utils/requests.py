@@ -44,3 +44,13 @@ if "buy-cart-games" in get:
     print("Content-type: application/json\n")
     content = database.buy_cart_games(get["email"].value)
     print(json.dumps(content))
+
+if "get-all-inventory-games" in get:
+    print("Content-type: application/json\n")
+    content = database.get_all_inventory_games(get["email"].value)
+    print(json.dumps(content))
+
+if "sell-inventory-game" in get:
+    print("Content-type: application/json\n")
+    content = database.sell_game_from_inventory(get["email"].value, get["game-id"].value)
+    print(json.dumps(content))
