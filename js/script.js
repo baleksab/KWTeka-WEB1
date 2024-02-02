@@ -103,7 +103,7 @@ function logout() {
         }
     }
     
-    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?logout=True&session_id=${getCookie("session_id")}`, true)
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?logout=True&session-id=${getCookie("session_id")}`, true)
     xmlHttp.send()
 
 }
@@ -203,8 +203,21 @@ function loadAllGames() {
                 else 
                     ratingColor = "red";
 
-                if (getCookie("session_id"))
+                var buttonText = "Dodaj u korpu"
+                var buttonColor = "#3498db"
+                var buttonFunction = `addToCart(${id})`
+
+                console.log(game["users_carts"])
+
+                if (getCookie("session_id")) {
                     displayButton = "inline-block"
+
+                    if (getCookie("email") && game["users_carts"].includes(getCookie("email"))) {
+                        buttonText = "Ukloni iz korpe"
+                        buttonColor = "red"
+                        buttonFunction = `removeFromCart(${id})`
+                    }
+                }
 
                 catalog.innerHTML += `
                     <div class="game">
@@ -212,7 +225,7 @@ function loadAllGames() {
                         <img src="${game["image"]}" alt="${game["name"]}">
                         <p class="info">Ocena: <span style="color: ${ratingColor}">${game["rating"]}</span></p>
                         <p class="info">Cena: ${game["price"]}<span style="color: green;">$</span></p>
-                        <button style="display: ${displayButton};" onclick="addToCart(${id})">Dodaj u korpu</button>
+                        <button id="buy-button${id}" style="display: ${displayButton}; background-color: ${buttonColor}" onclick="${buttonFunction}">${buttonText}</button>
                     </div>
                 `
             }
@@ -243,4 +256,58 @@ function loadNavbarButtons() {
 function populateHome() {
     loadNavbarButtons()
     loadAllGames()
+}
+
+function addToCart(id) {
+    var button = document.querySelector(`#buy-button${id}`)
+    button.disabled = true 
+
+    var xmlHttp = new XMLHttpRequest()
+
+    xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var content = JSON.parse(this.responseText)
+
+            if (content["added"] == "True") {
+                button.style["background-color"] = "red"
+                button.textContent = "Ukloni iz korpe"
+
+                button.onclick = function() {
+                    removeFromCart(id)
+                }
+            }
+
+            button.disabled = false
+        }
+    }
+    
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?add-to-cart=True&email=${getCookie("email")}&game-id=${id}`, true)
+    xmlHttp.send()
+}
+
+function removeFromCart(id) {
+    var button = document.querySelector(`#buy-button${id}`)
+    button.disabled = true 
+
+    var xmlHttp = new XMLHttpRequest()
+
+    xmlHttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var content = JSON.parse(this.responseText)
+
+            if (content["removed"] == "True") {
+                button.style["background-color"] = "#3498db"
+                button.textContent = "Dodaj u korpu"
+
+                button.onclick = function() {
+                    addToCart(id)
+                }
+            }
+
+            button.disabled = false
+        }
+    }
+    
+    xmlHttp.open("GET", `../cgi-bin/utils/requests.py?remove-from-cart=True&email=${getCookie("email")}&game-id=${id}`, true)
+    xmlHttp.send()
 }

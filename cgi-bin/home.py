@@ -13,6 +13,7 @@ print(f'''
         <title>WEBTeka</title>
     </head>
     <body onload="populateHome()">
+        <div class="container">
         <header>
             <nav>
                 <div class="logo"><a href="home.py">WEBTeka</a></div>
@@ -26,15 +27,15 @@ print(f'''
             </nav>
         </header>
       
-        <div class="container">
-            <div class="games-container" id="game-catalog">
-                
-            </div>
+        <div class="games-container" id="game-catalog">
+            
         </div>
 
         <footer>
                 &copy; 2024 WEBTeka
-            </footer>
+        </footer>
+        </div>
+
         <script src="../js/script.js"></script>
     </body>
     </html>

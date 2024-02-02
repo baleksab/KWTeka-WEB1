@@ -84,7 +84,7 @@ class Database():
 
         user = self.get_user_by_mail(account["email"])
 
-        if (user != False and user["password"] == password):
+        if user != False and user["password"] == password:
             session_id = random.randint(10**13, 10**14 - 1) 
 
             sql = f"UPDATE users SET session_id = '{session_id}' WHERE email = '{account["email"]}'"
@@ -125,10 +125,101 @@ class Database():
             game["image"] = image
             game["price"] = price
             game["rating"] = rating
+            game["game_id"] = id
+            game["users_carts"] = list()
+
+            sql = f"SELECT email FROM users_carts WHERE game_id = '{id}'"
+
+            cursor2 = self.connection.cursor()
+            cursor2.execute(sql)
+
+            self.connection.commit()
+
+            for row2 in cursor2.fetchall():
+                game["users_carts"].append(row2[0])
+
+            cursor2.close()
 
             content[id] = game
 
         cursor.close()
 
         return content
+    
+    def get_game_by_id(self, game_id):
+        sql = f"SELECT * FROM games WHERE game_id = '{game_id}'"
+        
+        cursor = self.connection.cursor()
+        cursor.execute(sql)
 
+        self.connection.commit()
+
+        for row in cursor.fetchall():
+            id = row[0]
+            name = row[1]
+            image = row[2]
+            price = row[3]
+            rating = row[4]
+
+            content = dict()
+            content["name"] = name
+            content["image"] = image
+            content["price"] = price
+            content["rating"] = rating
+            content["game_id"] = id
+
+            cursor.close()
+
+            return content
+        
+        return False
+
+    def add_to_cart(self, email, game_id):
+        game = self.get_game_by_id(game_id)
+        user = self.get_user_by_mail(email)
+
+        content = dict()
+        content["added"] = "False"
+
+        if game != False and user != False:
+            check_query = f"SELECT * FROM users_carts WHERE email = '{email}' and game_id = '{game_id}'"
+
+            cursor = self.connection.cursor()
+            cursor.execute(check_query)
+
+            self.connection.commit()
+
+            existing_row = cursor.fetchone()
+
+            cursor.close()
+
+            if not existing_row:
+                sql = f"INSERT INTO users_carts(email, game_id) VALUES ('{user["email"]}', '{game["game_id"]}')"
+
+                cursor = self.connection.cursor()
+                cursor.execute(sql)
+
+                self.connection.commit()
+
+                cursor.close()
+
+                content["added"] = "True"
+
+        return content
+    
+    def remove_from_cart(self, email, game_id):
+        content = dict()
+        content["removed"] = "True"
+
+        sql = f"DELETE FROM users_carts WHERE email = '{email}' and game_id = '{game_id}'"
+
+        cursor = self.connection.cursor()
+        cursor.execute(sql)
+
+        self.connection.commit()
+
+        cursor.close()
+
+        content["added"] = "True"
+
+        return content

@@ -12,7 +12,7 @@ if "register" in get:
 
 if "logout" in get:
     print("Content-type: application/json\n")
-    content = database.logout_user(get["session_id"].value)
+    content = database.logout_user(get["session-id"].value)
     print(json.dumps(content))
 
 if "login" in get:
@@ -23,4 +23,14 @@ if "login" in get:
 if "get-all-games" in get:
     print("Content-type: application/json\n")
     content = database.get_all_games()
+    print(json.dumps(content))
+
+if "add-to-cart" in get:
+    print("Content-type: application/json\n")
+    content = database.add_to_cart(get["email"].value, get["game-id"].value)
+    print(json.dumps(content))
+
+if "remove-from-cart" in get:
+    print("Content-type: application/json\n")
+    content = database.remove_from_cart(get["email"].value, get["game-id"].value)
     print(json.dumps(content))
